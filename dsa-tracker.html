@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DSA Progress Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg2: #f7f7f5;
+    --bg3: #f0efe9;
+    --text: #1a1a18;
+    --text2: #5a5a56;
+    --text3: #9a9a94;
+    --border: rgba(0,0,0,0.1);
+    --border2: rgba(0,0,0,0.18);
+    --accent: #378ADD;
+    --accent-bg: #E6F1FB;
+    --accent-text: #185FA5;
+    --success: #639922;
+    --success-bg: #EAF3DE;
+    --warning: #BA7517;
+    --warning-bg: #FAEEDA;
+    --danger: #A32D2D;
+    --danger-bg: #FCEBEB;
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+  [data-theme="dark"] {
+    --bg: #1c1c1a;
+    --bg2: #252522;
+    --bg3: #2e2e2a;
+    --text: #f0efe9;
+    --text2: #a8a8a0;
+    --text3: #68685e;
+    --border: rgba(255,255,255,0.1);
+    --border2: rgba(255,255,255,0.18);
+    --accent: #378ADD;
+    --accent-bg: #0c2a4a;
+    --accent-text: #85B7EB;
+    --success: #97C459;
+    --success-bg: #173404;
+    --warning: #EF9F27;
+    --warning-bg: #412402;
+    --danger: #F09595;
+    --danger-bg: #501313;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: var(--bg3); color: var(--text); font-size: 14px; min-height: 100vh; }
+  .app { max-width: 900px; margin: 0 auto; padding: 24px 16px; }
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+  .header-left h1 { font-size: 22px; font-weight: 600; color: var(--text); }
+  .header-left p { font-size: 12px; color: var(--text3); margin-top: 2px; }
+  .header-right { display: flex; gap: 8px; align-items: center; }
+  .streak-badge { display: flex; align-items: center; gap: 6px; background: var(--warning-bg); color: var(--warning); padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 500; }
+  .theme-btn { background: var(--bg2); border: 0.5px solid var(--border2); border-radius: var(--radius); padding: 7px 10px; cursor: pointer; color: var(--text2); font-size: 16px; }
+  .nav { display: flex; gap: 4px; background: var(--bg2); border-radius: var(--radius-lg); padding: 4px; margin-bottom: 24px; border: 0.5px solid var(--border); }
+  .nav-btn { flex: 1; padding: 8px; border: none; background: transparent; border-radius: var(--radius); cursor: pointer; font-size: 13px; font-weight: 500; color: var(--text2); transition: all .15s; }
+  .nav-btn.active { background: var(--bg); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .tab { display: none; }
+  .tab.active { display: block; }
+  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px; }
+  .metric { background: var(--bg2); border-radius: var(--radius); padding: 14px 16px; border: 0.5px solid var(--border); }
+  .metric-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+  .metric-val { font-size: 26px; font-weight: 600; color: var(--text); }
+  .metric-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+  .card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 18px 20px; margin-bottom: 14px; }
+  .card-title { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 14px; }
+  .topic-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 0.5px solid var(--border); }
+  .topic-row:last-child { border-bottom: none; }
+  .topic-name { width: 160px; font-size: 13px; color: var(--text); flex-shrink: 0; }
+  .bar-bg { flex: 1; height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 3px; transition: width .4s ease; }
+  .pct { width: 34px; font-size: 12px; color: var(--text3); text-align: right; }
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 500; flex-shrink: 0; }
+  .b-weak { background: var(--danger-bg); color: var(--danger); }
+  .b-ok { background: var(--warning-bg); color: var(--warning); }
+  .b-strong { background: var(--success-bg); color: var(--success); }
+  .b-new { background: var(--bg3); color: var(--text3); }
+  .b-iv { background: var(--accent-bg); color: var(--accent-text); }
+  .prob-row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 0.5px solid var(--border); }
+  .prob-row:last-child { border-bottom: none; }
+  .prob-info { flex: 1; }
+  .prob-name { font-size: 13px; font-weight: 500; color: var(--text); }
+  .prob-meta { font-size: 12px; color: var(--text3); margin-top: 2px; }
+  .prob-note { font-size: 12px; color: var(--text2); margin-top: 4px; background: var(--bg2); border-radius: var(--radius); padding: 6px 8px; }
+  .diff-easy { color: #3B6D11; font-size: 11px; font-weight: 600; }
+  .diff-medium { color: #854F0B; font-size: 11px; font-weight: 600; }
+  .diff-hard { color: #A32D2D; font-size: 11px; font-weight: 600; }
+  .del-btn { background: none; border: none; cursor: pointer; color: var(--text3); padding: 2px; font-size: 14px; }
+  .del-btn:hover { color: var(--danger); }
+  label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 4px; margin-top: 12px; }
+  label:first-child { margin-top: 0; }
+  input[type=text], textarea, select {
+    width: 100%; padding: 9px 12px; border-radius: var(--radius); border: 0.5px solid var(--border2);
+    background: var(--bg2); color: var(--text); font-size: 13px; font-family: inherit;
+    outline: none; transition: border .15s;
+  }
+  input[type=text]:focus, textarea:focus, select:focus { border-color: var(--accent); }
+  textarea { resize: vertical; min-height: 70px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .add-btn { width: 100%; margin-top: 14px; padding: 10px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius); font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity .15s; }
+  .add-btn:hover { opacity: .88; }
+  .export-btn { padding: 9px 16px; background: var(--bg2); border: 0.5px solid var(--border2); border-radius: var(--radius); font-size: 13px; cursor: pointer; color: var(--text2); font-weight: 500; }
+  .export-btn:hover { color: var(--text); }
+  .success-msg { font-size: 12px; color: var(--success); margin-top: 8px; height: 16px; }
+  .readiness-wrap { display: flex; align-items: center; gap: 24px; margin-bottom: 16px; }
+  .ring-wrap { position: relative; }
+  .ring-label { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .ring-pct { font-size: 22px; font-weight: 600; color: var(--text); }
+  .ring-sub { font-size: 10px; color: var(--text3); }
+  .next-card { display: flex; gap: 12px; background: var(--bg2); border-radius: var(--radius-lg); padding: 14px; margin-bottom: 10px; border: 0.5px solid var(--border); }
+  .next-num { width: 28px; height: 28px; border-radius: 50%; background: var(--accent-bg); color: var(--accent-text); font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .next-title { font-size: 14px; font-weight: 500; color: var(--text); }
+  .next-reason { font-size: 12px; color: var(--text3); margin-top: 3px; }
+  .stars { color: var(--warning); font-size: 12px; }
+  .empty { font-size: 13px; color: var(--text3); text-align: center; padding: 24px 0; }
+  .conf-bar { display: flex; gap: 3px; }
+  .conf-dot { width: 8px; height: 8px; border-radius: 50%; }
+  @media print {
+    body { background: white; color: black; }
+    .nav, .add-btn, .export-btn, .del-btn, .theme-btn, .header-right { display: none !important; }
+    .card { break-inside: avoid; border: 1px solid #ddd; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-left">
+      <h1>DSA Progress Tracker</h1>
+      <p id="last-date">Track your journey to interview readiness</p>
+    </div>
+    <div class="header-right">
+      <div class="streak-badge">&#128293; <span id="streak-val">0</span> day streak</div>
+      <button class="theme-btn" onclick="toggleTheme()" title="Toggle dark mode">&#9680;</button>
+      <button class="export-btn" onclick="exportPDF()">&#128196; Export PDF</button>
+    </div>
+  </div>
+</div>
+
+<div style="margin-bottom:15px;">
+  <input
+    type="text"
+    id="leetcodeUser"
+    value="khwlsarthak"
+    placeholder="LeetCode Username"
+    style="padding:8px;width:250px;"
+  />
+</div>
+
+  <div class="nav">
+    <button class="nav-btn active" onclick="showTab('dashboard')">&#128202; Dashboard</button>
+    <button class="nav-btn" onclick="showTab('topics')">&#128218; Topics</button>
+    <button class="nav-btn" onclick="showTab('log')">&#43; Log Problem</button>
+    <button class="nav-btn" onclick="showTab('next')">&#127919; What to Study</button>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="tab active" id="tab-dashboard">
+    <div class="metrics">
+      <div class="metric"><div class="metric-label">Problems Solved</div><div class="metric-val" id="m-solved">0</div><div class="metric-sub">total logged</div></div>
+      <div class="metric"><div class="metric-label">Topics Practiced</div><div class="metric-val" id="m-topics">0</div><div class="metric-sub">of 17 topics</div></div>
+      <div class="metric"><div class="metric-label">Interview Readiness</div><div class="metric-val" id="m-ready">0%</div><div class="metric-sub" id="m-ready-label">keep going</div></div>
+      <div class="metric"><div class="metric-label">Weak Topics</div><div class="metric-val" id="m-weak">0</div><div class="metric-sub">need attention</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Topic Strength Overview</div>
+      <div id="topic-bars"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Recent Problems</div>
+      <div id="recent-probs"></div>
+    </div>
+  </div>
+
+  <!-- TOPICS -->
+  <div class="tab" id="tab-topics">
+    <div class="card">
+      <div class="card-title" style="display:flex;justify-content:space-between">
+        <span>All Topics &mdash; Interview Importance</span>
+        <span style="font-size:11px;color:var(--text3)">&#11088; = interview weight</span>
+      </div>
+      <div id="all-topics"></div>
+    </div>
+  </div>
+
+  <!-- LOG -->
+  <div class="tab" id="tab-log">
+    <div class="card">
+      <div class="card-title">Log a Solved Problem</div>
+      <label>Problem name</label>
+      <input type="text" id="p-name" placeholder="e.g. Two Sum, Merge Intervals...">
+      <div class="form-grid">
+        <div>
+          <label>Topic</label>
+          <select id="p-topic">
+            <option value="">Select topic...</option>
+            <option>Arrays</option><option>Strings</option><option>Hashing</option>
+            <option>Two Pointers</option><option>Sliding Window</option><option>Stack</option>
+            <option>Queue</option><option>Linked List</option><option>Binary Search</option>
+            <option>Trees</option><option>Graphs</option><option>Dynamic Programming</option>
+            <option>Recursion / Backtracking</option><option>Greedy</option><option>Heaps</option>
+            <option>Tries</option><option>Bit Manipulation</option>
+          </select>
+        </div>
+        <div>
+          <label>Difficulty</label>
+          <select id="p-diff">
+            <option value="easy">Easy</option>
+            <option value="medium" selected>Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+        </div>
+        <div>
+          <label>Confidence (1-5)</label>
+          <select id="p-conf">
+            <option value="1">1 — Couldn't solve</option>
+            <option value="2">2 — Needed hints</option>
+            <option value="3" selected>3 — Solved with effort</option>
+            <option value="4">4 — Solved smoothly</option>
+            <option value="5">5 — Fast &amp; confident</option>
+          </select>
+        </div>
+        <div>
+          <label>Platform (optional)</label>
+          <select id="p-platform">
+            <option value="">-</option>
+            <option>LeetCode</option><option>HackerRank</option><option>GeeksForGeeks</option><option>Codeforces</option><option>Other</option>
+          </select>
+        </div>
+      </div>
+      <label>Notes (optional)</label>
+      <textarea id="p-note" placeholder="Key insight, approach used, anything to remember..."></textarea>
+      <button class="add-btn" onclick="logProblem()">+ Add Problem</button>
+      <div class="success-msg" id="log-msg"></div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+        <span>All Logged Problems</span>
+        <input type="text" id="search-input" placeholder="Search..." style="width:160px;padding:5px 10px;font-size:12px" oninput="renderAll()">
+      </div>
+      <div id="all-probs"></div>
+    </div>
+  </div>
+
+  <!-- WHAT TO STUDY -->
+  <div class="tab" id="tab-next">
+    <div class="card">
+      <div class="card-title">Interview Readiness Score</div>
+      <div class="readiness-wrap">
+        <div class="ring-wrap">
+          <svg width="100" height="100" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="40" fill="none" stroke="var(--bg3)" stroke-width="10"/>
+            <circle cx="50" cy="50" r="40" fill="none" stroke="var(--accent)" stroke-width="10"
+              stroke-dasharray="251.2" stroke-dashoffset="251.2" stroke-linecap="round"
+              transform="rotate(-90 50 50)" id="ring-arc"/>
+          </svg>
+          <div class="ring-label">
+            <div class="ring-pct" id="ring-pct">0%</div>
+            <div class="ring-sub">readiness</div>
+          </div>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:4px" id="ready-label-big">Start logging problems</div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Based on your confidence across high-impact topics</div>
+          <div id="high-impact-bars"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Recommended Next Topics</div>
+      <div id="next-topics"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Topic Priority for Interviews</div>
+      <div id="priority-table"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const TOPICS = ['Arrays','Strings','Hashing','Two Pointers','Sliding Window','Stack','Queue','Linked List','Binary Search','Trees','Graphs','Dynamic Programming','Recursion / Backtracking','Greedy','Heaps','Tries','Bit Manipulation'];
+const IV_WEIGHT = {'Arrays':5,'Strings':4,'Hashing':5,'Two Pointers':4,'Sliding Window':4,'Stack':4,'Queue':3,'Linked List':4,'Binary Search':5,'Trees':5,'Graphs':5,'Dynamic Programming':5,'Recursion / Backtracking':4,'Greedy':3,'Heaps':4,'Tries':3,'Bit Manipulation':3};
+const STUDY_ORDER = ['Dynamic Programming','Graphs','Trees','Binary Search','Hashing','Arrays','Sliding Window','Two Pointers','Linked List','Stack','Heaps','Strings','Recursion / Backtracking','Greedy','Queue','Tries','Bit Manipulation'];
+
+function load() { try { return JSON.parse(localStorage.getItem('dsa_v2') || '{"problems":[],"lastDate":"","streak":0}'); } catch(e) { return {problems:[],lastDate:'',streak:0}; } }
+function save(d) { localStorage.setItem('dsa_v2', JSON.stringify(d)); }
+
+function updateStreak(d) {
+  const today = new Date().toDateString();
+  if (d.lastDate === today) return d;
+  const yesterday = new Date(Date.now() - 86400000).toDateString();
+  if (d.lastDate === yesterday) { d.streak = (d.streak || 0) + 1; }
+  else if (d.lastDate !== today) { d.streak = 1; }
+  d.lastDate = today;
+  return d;
+}
+
+function topicStats(problems) {
+  const s = {};
+  TOPICS.forEach(t => s[t] = {count:0, total:0, avg:0});
+  problems.forEach(p => { if(s[p.topic]) { s[p.topic].count++; s[p.topic].total += parseInt(p.conf); } });
+  TOPICS.forEach(t => { if(s[t].count > 0) s[t].avg = s[t].total / s[t].count; });
+  return s;
+}
+
+function readiness(ts) {
+  let score = 0, max = 0;
+  TOPICS.forEach(t => {
+    const w = IV_WEIGHT[t]; max += w * 5;
+    if(ts[t].count > 0) score += w * (ts[t].avg * Math.min(ts[t].count, 5) / 5);
+  });
+  return Math.round((score / max) * 100);
+}
+
+function barColor(avg, count) {
+  if(count === 0) return 'var(--bg3)';
+  if(avg < 2.5) return '#E24B4A';
+  if(avg < 3.5) return '#EF9F27';
+  return '#639922';
+}
+
+function statusBadge(avg, count) {
+  if(count === 0) return '<span class="badge b-new">not started</span>';
+  if(avg < 2.5) return '<span class="badge b-weak">weak</span>';
+  if(avg < 3.8) return '<span class="badge b-ok">improving</span>';
+  return '<span class="badge b-strong">strong</span>';
+}
+
+function stars(w) {
+  const n = w >= 5 ? 3 : w >= 4 ? 2 : 1;
+  return '<span class="stars">' + '★'.repeat(n) + '☆'.repeat(3-n) + '</span>';
+}
+
+function render() {
+  const d = load();
+  const ts = topicStats(d.problems);
+  const r = readiness(ts);
+  const practiced = TOPICS.filter(t => ts[t].count > 0).length;
+  const weak = TOPICS.filter(t => ts[t].count > 0 && ts[t].avg < 2.5).length;
+
+  document.getElementById('streak-val').textContent = d.streak || 0;
+  document.getElementById('m-solved').textContent = d.problems.length;
+  document.getElementById('m-topics').textContent = practiced + '/17';
+  document.getElementById('m-ready').textContent = r + '%';
+  document.getElementById('m-weak').textContent = weak;
+  const rl = r < 30 ? 'keep practicing' : r < 60 ? 'good progress' : r < 80 ? 'almost ready' : 'interview ready!';
+  document.getElementById('m-ready-label').textContent = rl;
+  document.getElementById('last-date').textContent = 'Last updated: ' + new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+
+  // topic bars
+  document.getElementById('topic-bars').innerHTML = TOPICS.map(t => {
+    const s = ts[t];
+    const pct = s.count === 0 ? 0 : Math.min(100, Math.round((s.avg / 5) * 100));
+    return `<div class="topic-row">
+      <div class="topic-name">${t}</div>
+      <div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${barColor(s.avg,s.count)}"></div></div>
+      <div class="pct">${pct}%</div>
+      ${statusBadge(s.avg, s.count)}
+    </div>`;
+  }).join('');
+
+  // all topics tab
+  document.getElementById('all-topics').innerHTML = TOPICS.map(t => {
+    const s = ts[t];
+    return `<div class="topic-row">
+      <div class="topic-name">${t}</div>
+      <div style="flex:1;font-size:12px;color:var(--text3)">${s.count} solved</div>
+      ${stars(IV_WEIGHT[t])}
+      <span class="badge b-iv" style="margin:0 6px">iv${IV_WEIGHT[t]}</span>
+      ${statusBadge(s.avg, s.count)}
+    </div>`;
+  }).join('');
+
+  // recent
+  const recent = d.problems.slice(-8).reverse();
+  document.getElementById('recent-probs').innerHTML = recent.length ? recent.map(p => probHTML(p)).join('') : '<div class="empty">No problems yet. Go log your first one!</div>';
+
+  // all probs with search
+  const q = (document.getElementById('search-input')?.value || '').toLowerCase();
+  const filtered = q ? d.problems.filter(p => p.name.toLowerCase().includes(q) || p.topic.toLowerCase().includes(q)) : d.problems;
+  document.getElementById('all-probs').innerHTML = filtered.length ? filtered.slice().reverse().map(p => probHTML(p, true)).join('') : '<div class="empty">No problems found.</div>';
+
+  // readiness ring
+  const arc = document.getElementById('ring-arc');
+  arc.style.strokeDashoffset = Math.round(251.2 - (251.2 * r / 100));
+  document.getElementById('ring-pct').textContent = r + '%';
+  document.getElementById('ready-label-big').textContent = r < 30 ? 'Keep practicing!' : r < 60 ? 'Good progress!' : r < 80 ? 'Almost interview-ready!' : 'Interview Ready!';
+
+  // high impact bars
+  const hiTopics = TOPICS.filter(t => IV_WEIGHT[t] >= 4);
+  document.getElementById('high-impact-bars').innerHTML = hiTopics.map(t => {
+    const s = ts[t];
+    const pct = s.count === 0 ? 0 : Math.min(100, Math.round((s.avg / 5) * 100));
+    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+      <div style="width:120px;font-size:12px;color:var(--text)">${t}</div>
+      <div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${barColor(s.avg,s.count)}"></div></div>
+      <div style="width:28px;font-size:11px;color:var(--text3)">${pct}%</div>
+    </div>`;
+  }).join('');
+
+  // next topics
+  const nextTopics = STUDY_ORDER.filter(t => ts[t].count === 0 || (ts[t].avg < 3.5 && IV_WEIGHT[t] >= 4)).slice(0, 6);
+  document.getElementById('next-topics').innerHTML = nextTopics.length ? nextTopics.map((t, i) => {
+    const s = ts[t];
+    const reason = s.count === 0 ? 'Not started yet — high interview importance' : `Avg confidence ${s.avg.toFixed(1)}/5 — needs improvement`;
+    return `<div class="next-card">
+      <div class="next-num">${i+1}</div>
+      <div style="flex:1">
+        <div class="next-title">${t} ${stars(IV_WEIGHT[t])}</div>
+        <div class="next-reason">${reason}</div>
+      </div>
+    </div>`;
+  }).join('') : '<div class="empty" style="color:var(--success)">All high-priority topics covered!</div>';
+
+  // priority table
+  const sorted = [...TOPICS].sort((a,b) => IV_WEIGHT[b] - IV_WEIGHT[a]);
+  document.getElementById('priority-table').innerHTML = sorted.map(t => {
+    const s = ts[t];
+    return `<div class="topic-row">
+      <div class="topic-name">${t}</div>
+      ${stars(IV_WEIGHT[t])}
+      <span class="badge b-iv" style="margin:0 8px">iv${IV_WEIGHT[t]}</span>
+      <div style="flex:1"></div>
+      ${statusBadge(s.avg, s.count)}
+    </div>`;
+  }).join('');
+}
+
+function probHTML(p, showDelete) {
+  return `<div class="prob-row">
+    <div style="display:flex;flex-direction:column;gap:2px;padding-top:2px">
+      <div style="width:20px;height:20px;border-radius:50%;background:var(--success-bg);display:flex;align-items:center;justify-content:center">
+        <span style="font-size:11px;color:var(--success)">&#10003;</span>
+      </div>
+    </div>
+    <div class="prob-info">
+      <div class="prob-name">${p.name}</div>
+      <div class="prob-meta">${p.topic} &middot; <span class="diff-${p.diff}">${p.diff}</span> &middot; conf ${p.conf}/5 ${p.platform ? '&middot; ' + p.platform : ''} &middot; ${p.date}</div>
+      ${p.note ? `<div class="prob-note">${p.note}</div>` : ''}
+    </div>
+    ${showDelete ? `<button class="del-btn" onclick="deleteProb('${p.id}')" title="Delete">&#128465;</button>` : ''}
+  </div>`;
+}
+
+function logProblem() {
+  const name = document.getElementById('p-name').value.trim();
+  const topic = document.getElementById('p-topic').value;
+  const diff = document.getElementById('p-diff').value;
+  const conf = document.getElementById('p-conf').value;
+  const note = document.getElementById('p-note').value.trim();
+  const platform = document.getElementById('p-platform').value;
+  if (!name || !topic) { document.getElementById('log-msg').textContent = 'Please fill in name and topic.'; return; }
+  let d = load();
+  d = updateStreak(d);
+  d.problems.push({ id: Date.now() + '', name, topic, diff, conf, note, platform, date: new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) });
+  save(d);
+  document.getElementById('p-name').value = '';
+  document.getElementById('p-topic').value = '';
+  document.getElementById('p-note').value = '';
+  document.getElementById('log-msg').textContent = 'Problem logged successfully!';
+  setTimeout(() => document.getElementById('log-msg').textContent = '', 2500);
+  render();
+}
+
+function deleteProb(id) {
+  if (!confirm('Delete this problem?')) return;
+  const d = load(); d.problems = d.problems.filter(p => p.id !== id); save(d); render();
+}
+
+function renderAll() { render(); }
+
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  const idx = ['dashboard','topics','log','next'].indexOf(name);
+  document.querySelectorAll('.nav-btn')[idx].classList.add('active');
+}
+
+function toggleTheme() {
+  const html = document.documentElement;
+  html.dataset.theme = html.dataset.theme === 'dark' ? '' : 'dark';
+  localStorage.setItem('dsa_theme', html.dataset.theme);
+}
+
+function exportPDF() {
+  window.print();
+}
+
+const savedTheme = localStorage.getItem('dsa_theme');
+if (savedTheme) document.documentElement.dataset.theme = savedTheme;
+async function loadLeetCodeStats() {
+    try {
+        const response = await fetch(
+            "http://localhost:5000/leetcode/khwlsarthak"
+        );
+
+        const data = await response.json();
+
+        document.getElementById("m-solved").textContent =
+            data.solved;
+    } catch (err) {
+        console.log(err);
+    }
+}
+render();
+loadLeetCodeStats();
+</script>
+</body>
+</html>
