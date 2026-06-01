@@ -165,6 +165,14 @@
       <div class="metric"><div class="metric-label">Interview Readiness</div><div class="metric-val" id="m-ready">0%</div><div class="metric-sub" id="m-ready-label">keep going</div></div>
       <div class="metric"><div class="metric-label">Weak Topics</div><div class="metric-val" id="m-weak">0</div><div class="metric-sub">need attention</div></div>
     </div>
+      <div class="card">
+  <div class="card-title">LeetCode Stats</div>
+
+  <p>Easy: <span id="easy-count">0</span></p>
+  <p>Medium: <span id="medium-count">0</span></p>
+  <p>Hard: <span id="hard-count">0</span></p>
+</div>
+    
     <div class="card">
       <div class="card-title">Topic Strength Overview</div>
       <div id="topic-bars"></div>
@@ -342,7 +350,7 @@ function render() {
   const weak = TOPICS.filter(t => ts[t].count > 0 && ts[t].avg < 2.5).length;
 
   document.getElementById('streak-val').textContent = d.streak || 0;
-  document.getElementById('m-solved').textContent = d.problems.length;
+  //document.getElementById('m-solved').textContent = d.problems.length;
   document.getElementById('m-topics').textContent = practiced + '/17';
   document.getElementById('m-ready').textContent = r + '%';
   document.getElementById('m-weak').textContent = weak;
@@ -499,9 +507,20 @@ async function loadLeetCodeStats() {
         );
 
         const data = await response.json();
+        console.log(data);
+
 
         document.getElementById("m-solved").textContent =
-            data.solved;
+    data.solved;
+
+document.getElementById("easy-count").textContent =
+    data.easy;
+
+document.getElementById("medium-count").textContent =
+    data.medium;
+
+document.getElementById("hard-count").textContent =
+    data.hard;
     } catch (err) {
         console.log(err);
     }
