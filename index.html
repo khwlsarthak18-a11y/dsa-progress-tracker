@@ -502,9 +502,9 @@ const savedTheme = localStorage.getItem('dsa_theme');
 if (savedTheme) document.documentElement.dataset.theme = savedTheme;
 async function loadLeetCodeStats() {
     try {
-        const response = await fetch(
-            "http://localhost:5000/leetcode/khwlsarthak"
-        );
+       const response = await fetch(
+  "https://dsa-progress-tracker-du91.onrender.com/leetcode/khwlsarthak"
+);
 
         const data = await response.json();
         console.log(data);
