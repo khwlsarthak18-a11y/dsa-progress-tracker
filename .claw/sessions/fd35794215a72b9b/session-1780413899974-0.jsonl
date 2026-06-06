@@ -1,0 +1,3 @@
+{"created_at_ms":1780413899973,"model":"openai/gemini-2.5-flash","session_id":"session-1780413899974-0","type":"session_meta","updated_at_ms":1780413899973,"version":1,"workspace_root":"C:\\Users\\khwlp\\Desktop\\tracker"}
+{"text":"Verify the project structure:","timestamp_ms":1780413970231,"type":"prompt_history"}
+{"message":{"blocks":[{"text":"Verify the project structure:","type":"text"}],"role":"user"},"type":"message"}

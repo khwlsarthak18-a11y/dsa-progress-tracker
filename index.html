@@ -1,14 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DSA Progress Tracker</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DSA Progress Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 <div class="app">
+
+  <!-- HEADER -->
   <div class="header">
     <div class="header-left">
       <h1>DSA Progress Tracker</h1>
@@ -20,21 +22,14 @@
       <button class="export-btn" onclick="exportPDF()">&#128196; Export PDF</button>
     </div>
   </div>
-</div>
 
-<div style="margin-bottom:15px;">
-  <input
-    type="text"
-    id="leetcodeUser"
-    value="khwlsarthak"
-    placeholder="LeetCode Username"
-    style="padding:8px;width:250px;"
-  />
-  <button onclick="loadLeetCodeStats()">
-  Load Stats
-</button>
-</div>
+  <!-- LEETCODE SYNC -->
+  <div class="lc-sync">
+    <input type="text" id="leetcodeUser" value="khwlsarthak" placeholder="LeetCode Username" />
+    <button onclick="loadLeetCodeStats()">Load Stats</button>
+  </div>
 
+  <!-- NAV -->
   <div class="nav">
     <button class="nav-btn active" onclick="showTab('dashboard')">&#128202; Dashboard</button>
     <button class="nav-btn" onclick="showTab('topics')">&#128218; Topics</button>
@@ -42,137 +37,165 @@
     <button class="nav-btn" onclick="showTab('next')">&#127919; What to Study</button>
   </div>
 
-  <!-- DASHBOARD -->
+  <!-- ── DASHBOARD TAB ── -->
   <div class="tab active" id="tab-dashboard">
-    <div class="metrics">
-      <div class="metric"><div class="metric-label">Problems Solved</div><div class="metric-val" id="m-solved">0</div><div class="metric-sub">total logged</div></div>
-      <div class="metric"><div class="metric-label">Topics Practiced</div><div class="metric-val" id="m-topics">0</div><div class="metric-sub">of 17 topics</div></div>
-      <div class="metric"><div class="metric-label">Interview Readiness</div><div class="metric-val" id="m-ready">0%</div><div class="metric-sub" id="m-ready-label">keep going</div></div>
-      <div class="metric"><div class="metric-label">Weak Topics</div><div class="metric-val" id="m-weak">0</div><div class="metric-sub">need attention</div></div>
-    </div>
-      <div class="card">
-  <div class="card-title">LeetCode Stats</div>
 
-  <p>Easy: <span id="easy-count">0</span></p>
-  <p>Medium: <span id="medium-count">0</span></p>
-  <p>Hard: <span id="hard-count">0</span></p>
-</div>
-    
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-label">Problems Solved</div>
+        <div class="metric-val" id="m-solved">0</div>
+        <div class="metric-sub">total logged</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Topics Practiced</div>
+        <div class="metric-val" id="m-topics">0</div>
+        <div class="metric-sub">of 17 topics</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Interview Readiness</div>
+        <div class="metric-val" id="m-ready">0%</div>
+        <div class="metric-sub" id="m-ready-label">keep going</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Weak Topics</div>
+        <div class="metric-val" id="m-weak">0</div>
+        <div class="metric-sub">need attention</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">LeetCode Stats</div>
+      <div class="lc-stats">
+        <div class="lc-stat">
+          <span class="lc-stat-label">Easy</span>
+          <span class="lc-stat-val lc-easy" id="easy-count">0</span>
+        </div>
+        <div class="lc-stat">
+          <span class="lc-stat-label">Medium</span>
+          <span class="lc-stat-val lc-medium" id="medium-count">0</span>
+        </div>
+        <div class="lc-stat">
+          <span class="lc-stat-label">Hard</span>
+          <span class="lc-stat-val lc-hard" id="hard-count">0</span>
+        </div>
+      </div>
+    </div>
+
     <div class="card">
       <div class="card-title">Topic Strength Overview</div>
       <div id="topic-bars"></div>
     </div>
+
     <div class="card">
       <div class="card-title">Recent Problems</div>
       <div id="recent-probs"></div>
     </div>
-  </div>
 
-  <!-- TOPICS -->
+  </div><!-- /tab-dashboard -->
+
+  <!-- ── TOPICS TAB ── -->
   <div class="tab" id="tab-topics">
     <div class="card">
-      <div class="card-title" style="display:flex;justify-content:space-between">
+      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
         <span>All Topics &mdash; Interview Importance</span>
         <span style="font-size:11px;color:var(--text3)">&#11088; = interview weight</span>
       </div>
       <div id="all-topics"></div>
     </div>
-  </div>
+  </div><!-- /tab-topics -->
 
-  <!-- LOG -->
+  <!-- ── LOG PROBLEM TAB ── -->
   <div class="tab" id="tab-log">
+
     <div class="card">
       <div class="card-title">Log a Solved Problem</div>
-      <label>Problem name</label>
-      <input type="text" id="p-name" placeholder="e.g. Two Sum, Merge Intervals...">
-      <div class="form-grid">
-        <div>
-          <label>Topic</label>
-          <select id="p-topic">
-            <option value="">Select topic...</option>
-            <option>Arrays</option><option>Strings</option><option>Hashing</option>
-            <option>Two Pointers</option><option>Sliding Window</option><option>Stack</option>
-            <option>Queue</option><option>Linked List</option><option>Binary Search</option>
-            <option>Trees</option><option>Graphs</option><option>Dynamic Programming</option>
-            <option>Recursion / Backtracking</option><option>Greedy</option><option>Heaps</option>
-            <option>Tries</option><option>Bit Manipulation</option>
-          </select>
+      <div style="max-width:480px;">
+        <label>Problem Name *</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="text" id="prob-name" placeholder="e.g. Two Sum" style="margin:0;flex:1;" />
+          <button id="detect-btn" onclick="detectTopic()" class="detect-btn">Detect Topic</button>
         </div>
-        <div>
-          <label>Difficulty</label>
-          <select id="p-diff">
-            <option value="easy">Easy</option>
-            <option value="medium" selected>Medium</option>
-            <option value="hard">Hard</option>
-          </select>
-        </div>
-        <div>
-          <label>Confidence (1-5)</label>
-          <select id="p-conf">
-            <option value="1">1 — Couldn't solve</option>
-            <option value="2">2 — Needed hints</option>
-            <option value="3" selected>3 — Solved with effort</option>
-            <option value="4">4 — Solved smoothly</option>
-            <option value="5">5 — Fast &amp; confident</option>
-          </select>
-        </div>
-        <div>
-          <label>Platform (optional)</label>
-          <select id="p-platform">
-            <option value="">-</option>
-            <option>LeetCode</option><option>HackerRank</option><option>GeeksForGeeks</option><option>Codeforces</option><option>Other</option>
-          </select>
-        </div>
-      </div>
-      <label>Notes (optional)</label>
-      <textarea id="p-note" placeholder="Key insight, approach used, anything to remember..."></textarea>
-      <button class="add-btn" onclick="logProblem()">+ Add Problem</button>
-      <div class="success-msg" id="log-msg"></div>
-    </div>
-    <div class="card">
-      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
-        <span>All Logged Problems</span>
-        <input type="text" id="search-input" placeholder="Search..." style="width:160px;padding:5px 10px;font-size:12px" oninput="renderAll()">
-      </div>
-      <div id="all-probs"></div>
-    </div>
-  </div>
+        <div id="detect-status" class="detect-status"></div>
 
-  <!-- WHAT TO STUDY -->
-  <div class="tab" id="tab-next">
-    <div class="card">
-      <div class="card-title">Interview Readiness Score</div>
-      <div class="readiness-wrap">
-        <div class="ring-wrap">
-          <svg width="100" height="100" viewBox="0 0 100 100">
-            <circle cx="50" cy="50" r="40" fill="none" stroke="var(--bg3)" stroke-width="10"/>
-            <circle cx="50" cy="50" r="40" fill="none" stroke="var(--accent)" stroke-width="10"
-              stroke-dasharray="251.2" stroke-dashoffset="251.2" stroke-linecap="round"
-              transform="rotate(-90 50 50)" id="ring-arc"/>
-          </svg>
-          <div class="ring-label">
-            <div class="ring-pct" id="ring-pct">0%</div>
-            <div class="ring-sub">readiness</div>
+        <div class="form-grid" style="margin-top:12px;">
+          <div>
+            <label>Topic *</label>
+            <select id="prob-topic">
+              <option value="">-- Select Topic --</option>
+              <option>Arrays</option>
+              <option>Strings</option>
+              <option>Linked Lists</option>
+              <option>Stacks &amp; Queues</option>
+              <option>Trees</option>
+              <option>Graphs</option>
+              <option>Dynamic Programming</option>
+              <option>Binary Search</option>
+              <option>Sliding Window</option>
+              <option>Two Pointers</option>
+              <option>Recursion</option>
+              <option>Backtracking</option>
+              <option>Heaps</option>
+              <option>Tries</option>
+              <option>Greedy</option>
+              <option>Bit Manipulation</option>
+              <option>Math</option>
+            </select>
+          </div>
+          <div>
+            <label>Difficulty *</label>
+            <select id="prob-difficulty">
+              <option value="">-- Select --</option>
+              <option>Easy</option>
+              <option>Medium</option>
+              <option>Hard</option>
+            </select>
           </div>
         </div>
-        <div style="flex:1">
-          <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:4px" id="ready-label-big">Start logging problems</div>
-          <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Based on your confidence across high-impact topics</div>
-          <div id="high-impact-bars"></div>
-        </div>
+
+        <label style="margin-top:12px;">Confidence *</label>
+        <select id="prob-confidence">
+          <option value="">-- Select --</option>
+          <option value="1">1 ★ — barely remember</option>
+          <option value="2">2 ★★ — needed hints</option>
+          <option value="3">3 ★★★ — solved with effort</option>
+          <option value="4">4 ★★★★ — solved smoothly</option>
+          <option value="5">5 ★★★★★ — nailed it</option>
+        </select>
+
+        <label style="margin-top:12px;">Notes</label>
+        <textarea id="prob-notes" placeholder="Key insight, pattern, time complexity..."></textarea>
+
+        <button class="add-btn" onclick="logProblem()">&#10003; Log Problem</button>
+        <div class="success-msg" id="log-success"></div>
       </div>
     </div>
+
     <div class="card">
-      <div class="card-title">Recommended Next Topics</div>
+      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+        <span>Logged Problems</span>
+        <input type="text" id="search-input" placeholder="Search..." style="width:180px;margin:0;" />
+      </div>
+      <div id="logged-problems"></div>
+    </div>
+
+  </div><!-- /tab-log -->
+
+  <!-- ── WHAT TO STUDY TAB ── -->
+  <div class="tab" id="tab-next">
+
+    <div class="card">
+      <div class="card-title">Top Priority Topics</div>
       <div id="next-topics"></div>
     </div>
+
     <div class="card">
-      <div class="card-title">Topic Priority for Interviews</div>
+      <div class="card-title">Full Priority Table</div>
       <div id="priority-table"></div>
     </div>
-  </div>
-</div>
 
+  </div><!-- /tab-next -->
+
+</div><!-- /app -->
 
 <script src="js/app.js"></script>
 </body>
