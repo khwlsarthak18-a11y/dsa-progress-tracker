@@ -2,7 +2,7 @@
 // DSA Tracker — app.js
 // ============================================================
 
-const API_BASE = "http://localhost:5000";
+const API_BASE = "https://dsa-progress-tracker-du91.onrender.com";
 
 // ─── LOCAL STORAGE HELPERS ───────────────────────────────────
 
