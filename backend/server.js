@@ -1,15 +1,38 @@
 const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
+const fs = require("fs");
+const path = require("path");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-// In-memory store (resets on server restart)
-// For persistence, swap this out for a JSON file or SQLite later
-let loggedProblems = [];
+const DATA_FILE = path.join(__dirname, "problems.json");
+
+function loadProblemsFromFile() {
+  try {
+    if (fs.existsSync(DATA_FILE)) {
+      const data = fs.readFileSync(DATA_FILE, "utf8");
+      return JSON.parse(data) || [];
+    }
+  } catch (err) {
+    console.error("Error reading data file:", err);
+  }
+  return [];
+}
+
+function saveProblemsToFile(problems) {
+  try {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(problems, null, 2), "utf8");
+  } catch (err) {
+    console.error("Error writing data file:", err);
+  }
+}
+
+// Persisted store
+let loggedProblems = loadProblemsFromFile();
 
 app.get("/", (req, res) => {
   res.send("Backend Running");
@@ -112,6 +135,7 @@ app.post("/log-problem", (req, res) => {
   };
 
   loggedProblems.push(problem);
+  saveProblemsToFile(loggedProblems);
 
   res.status(201).json({ success: true, problem });
 });
@@ -130,6 +154,8 @@ app.delete("/problems/:id", (req, res) => {
   if (loggedProblems.length === before) {
     return res.status(404).json({ error: "Problem not found" });
   }
+
+  saveProblemsToFile(loggedProblems);
 
   res.json({ success: true });
 });

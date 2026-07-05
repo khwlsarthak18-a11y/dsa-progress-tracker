@@ -2,17 +2,88 @@
 // DSA Tracker — app.js
 // ============================================================
 
-const API_BASE = "https://dsa-progress-tracker-du91.onrender.com";
+let API_BASE = "http://localhost:5000";
+const PROD_API_BASE = "https://dsa-progress-tracker-du91.onrender.com";
+
+let localProblems = []; // global cache for synchronous operations
+let backendOnline = false;
+
+async function initAPI() {
+  try {
+    const res = await fetch(`${API_BASE}/`);
+    if (res.ok) {
+      console.log("Connected to local backend:", API_BASE);
+      backendOnline = true;
+      return;
+    }
+  } catch (e) {
+    console.log("Local backend not reachable. Trying production backend:", PROD_API_BASE);
+    try {
+      const res = await fetch(`${PROD_API_BASE}/`);
+      if (res.ok) {
+        API_BASE = PROD_API_BASE;
+        console.log("Connected to production backend:", API_BASE);
+        backendOnline = true;
+        return;
+      }
+    } catch (err) {
+      console.warn("All backends offline. Running in offline/localStorage mode.");
+    }
+  }
+  backendOnline = false;
+}
+
+async function syncWithBackend() {
+  await initAPI();
+  
+  if (backendOnline) {
+    try {
+      const res = await fetch(`${API_BASE}/problems`);
+      if (res.ok) {
+        const backendProblems = await res.json();
+        const local = JSON.parse(localStorage.getItem("dsa_problems")) || [];
+        
+        // If local has more problems, let's sync them to backend!
+        if (local.length > backendProblems.length) {
+          console.log("Local has more problems than backend. Syncing local to backend...");
+          for (const p of local) {
+            const exists = backendProblems.some(bp => bp.id === p.id || (bp.name === p.name && bp.topic === p.topic));
+            if (!exists) {
+              await fetch(`${API_BASE}/log-problem`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(p)
+              });
+            }
+          }
+          // Fetch updated list
+          const updatedRes = await fetch(`${API_BASE}/problems`);
+          if (updatedRes.ok) {
+            saveProblems(await updatedRes.json());
+          }
+        } else {
+          saveProblems(backendProblems);
+        }
+        return;
+      }
+    } catch (e) {
+      console.warn("Failed to fetch problems from backend:", e);
+    }
+  }
+  
+  // Fallback to local storage if offline
+  saveProblems(JSON.parse(localStorage.getItem("dsa_problems")) || []);
+}
 
 // ─── LOCAL STORAGE HELPERS ───────────────────────────────────
 
 function saveProblems(problems) {
+  localProblems = problems;
   localStorage.setItem("dsa_problems", JSON.stringify(problems));
 }
 
 function loadProblems() {
-  try { return JSON.parse(localStorage.getItem("dsa_problems")) || []; }
-  catch { return []; }
+  return localProblems;
 }
 
 function saveTheme(isDark) {
@@ -85,7 +156,17 @@ function updateStreak() {
 }
 
 function initStreak() {
-  setText("streak-val", loadStreak().count);
+  const today = new Date().toDateString();
+  const yesterday = new Date(Date.now() - 86400000).toDateString();
+  const streak = loadStreak();
+
+  if (streak.lastDate && streak.lastDate !== today && streak.lastDate !== yesterday) {
+    // Streak broken!
+    streak.count = 0;
+    saveStreak(streak);
+  }
+
+  setText("streak-val", streak.count);
 }
 
 // ─── LEETCODE STATS ──────────────────────────────────────────
@@ -109,6 +190,7 @@ async function loadLeetCodeStats() {
     setText("easy-count",   data.easy   ?? 0);
     setText("medium-count", data.medium ?? 0);
     setText("hard-count",   data.hard   ?? 0);
+    setText("lc-total-count", data.solved ?? 0);
 
     // Readiness based on LeetCode solved count
     const readiness = Math.min(100, Math.floor(((data.solved || 0) / 300) * 100));
@@ -119,7 +201,7 @@ async function loadLeetCodeStats() {
 
     // Recount local stats
     refreshLocalMetrics();
-    setText("m-solved", data.solved || 0);
+    
     const dateEl = document.getElementById("last-date");
     if (dateEl) dateEl.textContent = `Last synced: ${new Date().toLocaleDateString()}`;
 
@@ -322,7 +404,7 @@ function renderNextSteps() {
 
 // ─── LOG PROBLEM ─────────────────────────────────────────────
 
-function logProblem() {
+async function logProblem() {
   const name       = getVal("prob-name");
   const topic      = getVal("prob-topic");
   const difficulty = getVal("prob-difficulty");
@@ -334,8 +416,7 @@ function logProblem() {
     return;
   }
 
-  const problems = loadProblems();
-  problems.push({
+  const newProblem = {
     id:         Date.now(),
     name,
     topic,
@@ -343,9 +424,35 @@ function logProblem() {
     confidence: Number(confidence),
     notes,
     date:       new Date().toISOString()
-  });
+  };
 
-  saveProblems(problems);
+  if (backendOnline) {
+    try {
+      const res = await fetch(`${API_BASE}/log-problem`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newProblem)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const problems = loadProblems();
+        problems.push(data.problem || newProblem);
+        saveProblems(problems);
+      } else {
+        throw new Error("Backend log failed");
+      }
+    } catch (e) {
+      console.warn("Backend log failed, saving locally:", e);
+      const problems = loadProblems();
+      problems.push(newProblem);
+      saveProblems(problems);
+    }
+  } else {
+    const problems = loadProblems();
+    problems.push(newProblem);
+    saveProblems(problems);
+  }
+
   updateStreak();
   refreshLocalMetrics();
   renderAll();
@@ -388,7 +495,17 @@ function renderLoggedProblems() {
   container.innerHTML = problems.map(p => probRowHTML(p, true)).join("");
 }
 
-function deleteProblem(id) {
+async function deleteProblem(id) {
+  if (backendOnline) {
+    try {
+      const res = await fetch(`${API_BASE}/problems/${id}`, {
+        method: "DELETE"
+      });
+      if (!res.ok) throw new Error("Backend delete failed");
+    } catch (e) {
+      console.warn("Backend delete failed, removing locally:", e);
+    }
+  }
   const problems = loadProblems().filter(p => p.id !== id);
   saveProblems(problems);
   refreshLocalMetrics();
@@ -486,9 +603,144 @@ function escHtml(str) {
     .replace(/"/g, "&quot;");
 }
 
+// ─── TOPIC AUTO DETECTION ─────────────────────────────────────
+
+const POPULAR_PROBLEMS = {
+  "two sum": "Arrays",
+  "3sum": "Two Pointers",
+  "three sum": "Two Pointers",
+  "container with most water": "Two Pointers",
+  "group anagrams": "Arrays",
+  "valid anagram": "Strings",
+  "valid palindrome": "Two Pointers",
+  "valid parentheses": "Stacks & Queues",
+  "climbing stairs": "Dynamic Programming",
+  "coin change": "Dynamic Programming",
+  "longest common subsequence": "Dynamic Programming",
+  "longest consecutive sequence": "Arrays",
+  "house robber": "Dynamic Programming",
+  "house robber ii": "Dynamic Programming",
+  "merge intervals": "Arrays",
+  "insert interval": "Arrays",
+  "non-overlapping intervals": "Arrays",
+  "meeting rooms": "Arrays",
+  "meeting rooms ii": "Arrays",
+  "best time to buy and sell stock": "Arrays",
+  "best time to buy and sell stock ii": "Arrays",
+  "reverse linked list": "Linked Lists",
+  "merge two sorted lists": "Linked Lists",
+  "merge k sorted lists": "Linked Lists",
+  "remove nth node from end of list": "Linked Lists",
+  "reorder list": "Linked Lists",
+  "linked list cycle": "Linked Lists",
+  "lru cache": "Linked Lists",
+  "invert binary tree": "Trees",
+  "maximum depth of binary tree": "Trees",
+  "same tree": "Trees",
+  "subtree of another tree": "Trees",
+  "binary tree level order traversal": "Trees",
+  "lowest common ancestor of a binary search tree": "Trees",
+  "lowest common ancestor of a binary tree": "Trees",
+  "construct binary tree from preorder and inorder traversal": "Trees",
+  "binary tree maximum path sum": "Trees",
+  "validate binary search tree": "Trees",
+  "kth smallest element in a bst": "Trees",
+  "clone graph": "Graphs",
+  "course schedule": "Graphs",
+  "number of islands": "Graphs",
+  "pacific atlantic water flow": "Graphs",
+  "number of connected components in an undirected graph": "Graphs",
+  "graph valid tree": "Graphs",
+  "longest substring without repeating characters": "Sliding Window",
+  "longest repeating character replacement": "Sliding Window",
+  "minimum window substring": "Sliding Window",
+  "kth largest element in an array": "Heaps",
+  "top k frequent elements": "Heaps",
+  "find median from data stream": "Heaps",
+  "word search": "Backtracking",
+  "implement trie (prefix tree)": "Tries",
+  "search in rotated sorted array": "Binary Search",
+  "find minimum in rotated sorted array": "Binary Search",
+  "word search ii": "Tries"
+};
+
+function detectTopic() {
+  const nameEl = document.getElementById("prob-name");
+  const statusEl = document.getElementById("detect-status");
+  const topicSelect = document.getElementById("prob-topic");
+
+  if (!nameEl || !statusEl || !topicSelect) return;
+
+  const rawName = nameEl.value.trim();
+  if (!rawName) {
+    statusEl.textContent = "Please enter a problem name first.";
+    statusEl.className = "detect-status fail";
+    return;
+  }
+
+  const name = rawName.toLowerCase().replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, " ");
+
+  // 1. Direct Lookup
+  let detectedTopic = POPULAR_PROBLEMS[name];
+
+  // 2. Keyword rules if direct lookup fails
+  if (!detectedTopic) {
+    const rules = [
+      { keys: ["trie", "prefix tree"], topic: "Tries" },
+      { keys: ["binary search tree", "bst", "lowest common ancestor", "preorder", "inorder", "postorder", "subtree"], topic: "Trees" },
+      { keys: ["binary tree", "tree", "depth of", "height of", "path sum"], topic: "Trees" },
+      { keys: ["graph", "island", "course schedule", "dfs", "bfs", "dijkstra", "shortest path", "network delay"], topic: "Graphs" },
+      { keys: ["linked list", "list node", "cycle", "reverse list", "middle of list", "merge lists"], topic: "Linked Lists" },
+      { keys: ["stack", "queue", "parentheses", "histogram", "sliding window maximum"], topic: "Stacks & Queues" },
+      { keys: ["dynamic programming", "dp", "climbing stairs", "coin change", "knapsack", "subsequence", "robber", "lcs"], topic: "Dynamic Programming" },
+      { keys: ["greedy", "jump game", "gas station", "interval"], topic: "Greedy" },
+      { keys: ["heap", "priority queue", "kth largest", "top k", "median"], topic: "Heaps" },
+      { keys: ["binary search", "search in rotated", "rotated sorted", "find minimum in"], topic: "Binary Search" },
+      { keys: ["sliding window", "longest substring", "character replacement", "min window"], topic: "Sliding Window" },
+      { keys: ["two pointer", "two sum", "3sum", "three sum", "pointers", "palindrome", "most water"], topic: "Two Pointers" },
+      { keys: ["backtrack", "permutation", "combination", "subset", "n-queens"], topic: "Backtracking" },
+      { keys: ["bit", "binary operations", "xor", "number of 1 bits", "reverse bits"], topic: "Bit Manipulation" },
+      { keys: ["string", "anagram", "palindrome", "char"], topic: "Strings" },
+      { keys: ["array", "matrix", "grid", "row", "col", "element", "sum", "duplicate", "product"], topic: "Arrays" },
+      { keys: ["recurse", "recursion", "memoization"], topic: "Recursion" },
+      { keys: ["math", "gcd", "lcm", "number", "prime", "digit", "calculator"], topic: "Math" }
+    ];
+
+    for (const rule of rules) {
+      if (rule.keys.some(key => name.includes(key))) {
+        detectedTopic = rule.topic;
+        break;
+      }
+    }
+  }
+
+  // 3. Update dropdown and status
+  if (detectedTopic) {
+    let found = false;
+    for (let i = 0; i < topicSelect.options.length; i++) {
+      if (topicSelect.options[i].value === detectedTopic || topicSelect.options[i].text === detectedTopic) {
+        topicSelect.selectedIndex = i;
+        found = true;
+        break;
+      }
+    }
+
+    if (found) {
+      statusEl.textContent = `✓ Detected Topic: "${detectedTopic}"`;
+      statusEl.className = "detect-status success";
+    } else {
+      statusEl.textContent = `Could not select detected topic: "${detectedTopic}"`;
+      statusEl.className = "detect-status fail";
+    }
+  } else {
+    statusEl.textContent = `Could not auto-detect topic. Please select manually.`;
+    statusEl.className = "detect-status fail";
+  }
+}
+
 // ─── INIT ────────────────────────────────────────────────────
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   applyTheme();
   initStreak();
   showTab("dashboard");
@@ -496,6 +748,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const searchInput = document.getElementById("search-input");
   if (searchInput) searchInput.addEventListener("input", renderLoggedProblems);
 
+  await syncWithBackend();
   refreshLocalMetrics();
   renderAll();
 });

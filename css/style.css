@@ -121,6 +121,11 @@ textarea { resize: vertical; min-height: 70px; }
 .pri-high { color: var(--danger); font-weight: 600; }
 .pri-med  { color: var(--warning); font-weight: 600; }
 .pri-low  { color: var(--success); font-weight: 600; }
+.detect-btn { padding: 9px 16px; background: var(--bg2); border: 0.5px solid var(--border2); border-radius: var(--radius); font-size: 13px; cursor: pointer; color: var(--text2); font-weight: 500; transition: color .15s, border-color .15s; white-space: nowrap; }
+.detect-btn:hover { color: var(--text); border-color: var(--accent); }
+.detect-status { font-size: 12px; margin-top: 4px; min-height: 16px; transition: color .15s; }
+.detect-status.success { color: var(--success); }
+.detect-status.fail { color: var(--danger); }
 @media (max-width: 600px) {
   .form-grid { grid-template-columns: 1fr; }
   .lc-stats { flex-wrap: wrap; gap: 12px; }
