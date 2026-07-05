@@ -171,21 +171,32 @@ function initStreak() {
 
 // ─── LEETCODE STATS ──────────────────────────────────────────
 
-async function loadLeetCodeStats() {
+async function loadLeetCodeStats(username, isAuto = false) {
   const input = document.getElementById("leetcodeUser");
-  const username = input ? input.value.trim() : "";
-  if (!username) { alert("Please enter a LeetCode username."); return; }
+  if (!username) {
+    username = input ? input.value.trim() : "";
+  }
+  if (!username) {
+    if (!isAuto) alert("Please enter a LeetCode username.");
+    return;
+  }
+
+  if (input && input.value !== username) {
+    input.value = username;
+  }
 
   try {
     const res = await fetch(`${API_BASE}/leetcode/${username}`);
     if (!res.ok) {
       const err = await res.json();
-      alert(err.error || "Failed to load stats.");
+      if (!isAuto) alert(err.error || "Failed to load stats.");
       return;
     }
 
     const data = await res.json();
     
+    // Save username on successful fetch
+    localStorage.setItem("dsa_leetcode_username", username);
 
     setText("easy-count",   data.easy   ?? 0);
     setText("medium-count", data.medium ?? 0);
@@ -209,7 +220,9 @@ async function loadLeetCodeStats() {
 
   } catch (err) {
     console.error("LeetCode fetch error:", err);
-    alert("Could not connect to backend. Is the server running on port 5000?");
+    if (!isAuto) {
+      alert("Could not connect to backend. Is the server running on port 5000?");
+    }
   }
 }
 
@@ -247,6 +260,145 @@ const TOPIC_WEIGHTS = {
   "Binary Search": 4, "Sliding Window": 4, "Two Pointers": 4, "Linked Lists": 3,
   "Stacks & Queues": 3, "Recursion": 3, "Backtracking": 3, "Heaps": 3,
   "Greedy": 2, "Tries": 2, "Bit Manipulation": 2, "Math": 2
+};
+
+const TOPIC_RESOURCES = {
+  "Arrays": {
+    problems: [
+      { name: "Two Sum", url: "https://leetcode.com/problems/two-sum/" },
+      { name: "Contains Duplicate", url: "https://leetcode.com/problems/contains-duplicate/" },
+      { name: "Best Time to Buy and Sell Stock", url: "https://leetcode.com/problems/best-time-to-buy-and-sell-stock/" }
+    ],
+    resource: { name: "NeetCode: Array & Hashing", url: "https://www.youtube.com/watch?v=Wd44W0W-U80" }
+  },
+  "Strings": {
+    problems: [
+      { name: "Valid Anagram", url: "https://leetcode.com/problems/valid-anagram/" },
+      { name: "Group Anagrams", url: "https://leetcode.com/problems/group-anagrams/" },
+      { name: "Valid Parentheses", url: "https://leetcode.com/problems/valid-parentheses/" }
+    ],
+    resource: { name: "NeetCode: Strings", url: "https://www.youtube.com/watch?v=g3WZJBvN48E" }
+  },
+  "Linked Lists": {
+    problems: [
+      { name: "Reverse Linked List", url: "https://leetcode.com/problems/reverse-linked-list/" },
+      { name: "Merge Two Sorted Lists", url: "https://leetcode.com/problems/merge-two-sorted-lists/" },
+      { name: "Linked List Cycle", url: "https://leetcode.com/problems/linked-list-cycle/" }
+    ],
+    resource: { name: "NeetCode: Linked List Playlist", url: "https://www.youtube.com/playlist?list=PLot-Xpkr5xVf5d-jV3G267K6T6S5o5fQz" }
+  },
+  "Stacks & Queues": {
+    problems: [
+      { name: "Valid Parentheses", url: "https://leetcode.com/problems/valid-parentheses/" },
+      { name: "Min Stack", url: "https://leetcode.com/problems/min-stack/" },
+      { name: "Implement Queue using Stacks", url: "https://leetcode.com/problems/implement-queue-using-stacks/" }
+    ],
+    resource: { name: "NeetCode: Stack Playlist", url: "https://www.youtube.com/playlist?list=PLot-Xpkr5xVflZf2X4OAdHnphfGwtZ_hB" }
+  },
+  "Trees": {
+    problems: [
+      { name: "Invert Binary Tree", url: "https://leetcode.com/problems/invert-binary-tree/" },
+      { name: "Maximum Depth of Binary Tree", url: "https://leetcode.com/problems/maximum-depth-of-binary-tree/" },
+      { name: "Validate Binary Search Tree", url: "https://leetcode.com/problems/validate-binary-search-tree/" }
+    ],
+    resource: { name: "NeetCode: Trees Playlist", url: "https://www.youtube.com/playlist?list=PLot-Xpkr5xVfPjjzf68Z8E2fPL2S5U4vM" }
+  },
+  "Graphs": {
+    problems: [
+      { name: "Clone Graph", url: "https://leetcode.com/problems/clone-graph/" },
+      { name: "Number of Islands", url: "https://leetcode.com/problems/number-of-islands/" },
+      { name: "Course Schedule", url: "https://leetcode.com/problems/course-schedule/" }
+    ],
+    resource: { name: "NeetCode: Graph Playlist", url: "https://www.youtube.com/playlist?list=PLot-Xpkr5xVf5d-jV3G267K6T6S5o5fQz" }
+  },
+  "Dynamic Programming": {
+    problems: [
+      { name: "Climbing Stairs", url: "https://leetcode.com/problems/climbing-stairs/" },
+      { name: "Coin Change", url: "https://leetcode.com/problems/coin-change/" },
+      { name: "Longest Common Subsequence", url: "https://leetcode.com/problems/longest-common-subsequence/" }
+    ],
+    resource: { name: "NeetCode: DP Playlist", url: "https://www.youtube.com/playlist?list=PLot-Xpkr5xVf5d-jV3G267K6T6S5o5fQz" }
+  },
+  "Binary Search": {
+    problems: [
+      { name: "Binary Search", url: "https://leetcode.com/problems/binary-search/" },
+      { name: "Search in Rotated Sorted Array", url: "https://leetcode.com/problems/search-in-rotated-sorted-array/" },
+      { name: "Find Minimum in Rotated Sorted Array", url: "https://leetcode.com/problems/find-minimum-in-rotated-sorted-array/" }
+    ],
+    resource: { name: "NeetCode: Binary Search Playlist", url: "https://www.youtube.com/playlist?list=PLot-Xpkr5xVf5d-jV3G267K6T6S5o5fQz" }
+  },
+  "Sliding Window": {
+    problems: [
+      { name: "Best Time to Buy and Sell Stock", url: "https://leetcode.com/problems/best-time-to-buy-and-sell-stock/" },
+      { name: "Longest Substring Without Repeating Characters", url: "https://leetcode.com/problems/longest-substring-without-repeating-characters/" },
+      { name: "Longest Repeating Character Replacement", url: "https://leetcode.com/problems/longest-repeating-character-replacement/" }
+    ],
+    resource: { name: "NeetCode: Sliding Window Playlist", url: "https://www.youtube.com/playlist?list=PLot-Xpkr5xVf5d-jV3G267K6T6S5o5fQz" }
+  },
+  "Two Pointers": {
+    problems: [
+      { name: "Valid Palindrome", url: "https://leetcode.com/problems/valid-palindrome/" },
+      { name: "Two Sum II", url: "https://leetcode.com/problems/two-sum-ii-input-array-is-sorted/" },
+      { name: "Container With Most Water", url: "https://leetcode.com/problems/container-with-most-water/" }
+    ],
+    resource: { name: "NeetCode: Two Pointers Playlist", url: "https://www.youtube.com/playlist?list=PLot-Xpkr5xVf5d-jV3G267K6T6S5o5fQz" }
+  },
+  "Recursion": {
+    problems: [
+      { name: "Fibonacci Number", url: "https://leetcode.com/problems/fibonacci-number/" },
+      { name: "Merge Two Sorted Lists", url: "https://leetcode.com/problems/merge-two-sorted-lists/" },
+      { name: "Power of Two", url: "https://leetcode.com/problems/power-of-two/" }
+    ],
+    resource: { name: "Recursion Explained", url: "https://www.youtube.com/watch?v=ngCos392W4w" }
+  },
+  "Backtracking": {
+    problems: [
+      { name: "Subsets", url: "https://leetcode.com/problems/subsets/" },
+      { name: "Combination Sum", url: "https://leetcode.com/problems/combination-sum/" },
+      { name: "Word Search", url: "https://leetcode.com/problems/word-search/" }
+    ],
+    resource: { name: "NeetCode: Backtracking Playlist", url: "https://www.youtube.com/playlist?list=PLot-Xpkr5xVf5d-jV3G267K6T6S5o5fQz" }
+  },
+  "Heaps": {
+    problems: [
+      { name: "Kth Largest Element in an Array", url: "https://leetcode.com/problems/kth-largest-element-in-an-array/" },
+      { name: "Top K Frequent Elements", url: "https://leetcode.com/problems/top-k-frequent-elements/" },
+      { name: "Find Median from Data Stream", url: "https://leetcode.com/problems/find-median-from-data-stream/" }
+    ],
+    resource: { name: "NeetCode: Heap Playlist", url: "https://www.youtube.com/playlist?list=PLot-Xpkr5xVf5d-jV3G267K6T6S5o5fQz" }
+  },
+  "Tries": {
+    problems: [
+      { name: "Implement Trie (Prefix Tree)", url: "https://leetcode.com/problems/implement-trie-prefix-tree/" },
+      { name: "Design Add and Search Words", url: "https://leetcode.com/problems/design-add-and-search-words-data-structure/" },
+      { name: "Word Search II", url: "https://leetcode.com/problems/word-search-ii/" }
+    ],
+    resource: { name: "NeetCode: Trie Playlist", url: "https://www.youtube.com/playlist?list=PLot-Xpkr5xVf5d-jV3G267K6T6S5o5fQz" }
+  },
+  "Greedy": {
+    problems: [
+      { name: "Maximum Subarray", url: "https://leetcode.com/problems/maximum-subarray/" },
+      { name: "Jump Game", url: "https://leetcode.com/problems/jump-game/" },
+      { name: "Gas Station", url: "https://leetcode.com/problems/gas-station/" }
+    ],
+    resource: { name: "NeetCode: Greedy Playlist", url: "https://www.youtube.com/playlist?list=PLot-Xpkr5xVf5d-jV3G267K6T6S5o5fQz" }
+  },
+  "Bit Manipulation": {
+    problems: [
+      { name: "Number of 1 Bits", url: "https://leetcode.com/problems/number-of-1-bits/" },
+      { name: "Counting Bits", url: "https://leetcode.com/problems/counting-bits/" },
+      { name: "Reverse Bits", url: "https://leetcode.com/problems/reverse-bits/" }
+    ],
+    resource: { name: "NeetCode: Bit Manipulation Playlist", url: "https://www.youtube.com/playlist?list=PLot-Xpkr5xVf5d-jV3G267K6T6S5o5fQz" }
+  },
+  "Math": {
+    problems: [
+      { name: "Happy Number", url: "https://leetcode.com/problems/happy-number/" },
+      { name: "Plus One", url: "https://leetcode.com/problems/plus-one/" },
+      { name: "Pow(x, n)", url: "https://leetcode.com/problems/powx-n/" }
+    ],
+    resource: { name: "NeetCode: Math & Geometry Playlist", url: "https://www.youtube.com/playlist?list=PLot-Xpkr5xVf5d-jV3G267K6T6S5o5fQz" }
+  }
 };
 
 function buildTopicMap(problems) {
@@ -359,12 +511,31 @@ function renderNextSteps() {
         const reason = p.count === 0
           ? `Not started — high interview importance (${"★".repeat(p.weight)})`
           : `${p.count} solved, avg confidence ${p.avg.toFixed(1)}/5`;
+
+        const resInfo = TOPIC_RESOURCES[p.topic];
+        let resourcesHtml = "";
+        if (resInfo) {
+          const probLinks = resInfo.problems.map(pr => 
+            `<a href="${pr.url}" target="_blank" class="res-link">${escHtml(pr.name)}</a>`
+          ).join("");
+          
+          resourcesHtml = `
+            <div class="next-resources">
+              <div class="res-title">Suggested Problems:</div>
+              <div class="res-links">${probLinks}</div>
+              <div class="res-title" style="margin-top: 6px;">Video Tutorial:</div>
+              <a href="${resInfo.resource.url}" target="_blank" class="res-video">&#9658; ${escHtml(resInfo.resource.name)}</a>
+            </div>
+          `;
+        }
+
         return `
           <div class="next-card">
             <div class="next-num">${i + 1}</div>
-            <div>
+            <div style="flex: 1;">
               <div class="next-title">${escHtml(p.topic)}</div>
               <div class="next-reason">${reason}</div>
+              ${resourcesHtml}
             </div>
           </div>`;
       }).join("");
@@ -523,7 +694,7 @@ function probRowHTML(p, showDelete = false) {
     ? `<button class="del-btn" onclick="deleteProblem(${p.id})" title="Delete">&#10005;</button>`
     : "";
   const note  = p.notes
-    ? `<div class="prob-note">${escHtml(p.notes)}</div>`
+    ? `<div class="prob-note">${formatNotes(p.notes)}</div>`
     : "";
   return `
     <div class="prob-row">
@@ -601,6 +772,62 @@ function escHtml(str) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+function formatNotes(notes) {
+  if (!notes) return "";
+  
+  // 1. Escape HTML for security
+  let html = escHtml(notes);
+
+  // 2. Parse multi-line code blocks (marked by ```)
+  const codeBlocks = [];
+  html = html.replace(/```([\s\S]*?)```/g, (match, code) => {
+    const placeholder = `__CODE_BLOCK_${codeBlocks.length}__`;
+    codeBlocks.push(`<pre class="code-block"><code>${code.trim()}</code></pre>`);
+    return placeholder;
+  });
+
+  // 3. Parse inline code (marked by `)
+  html = html.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
+
+  // 4. Parse bold text (marked by **)
+  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+  // 5. Parse bullet lists
+  const lines = html.split("\n");
+  let inList = false;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (line.startsWith("- ") || line.startsWith("* ")) {
+      const itemText = line.substring(2);
+      let itemHtml = `<li>${itemText}</li>`;
+      if (!inList) {
+        inList = true;
+        itemHtml = '<ul class="notes-list">' + itemHtml;
+      }
+      lines[i] = itemHtml;
+    } else {
+      if (inList) {
+        inList = false;
+        lines[i] = '</ul>' + lines[i];
+      }
+    }
+  }
+  if (inList) {
+    lines[lines.length - 1] += '</ul>';
+  }
+  html = lines.join("\n");
+
+  // 6. Convert newlines to <br> outside of pre blocks
+  html = html.replace(/\n/g, "<br>");
+
+  // 7. Restore multi-line code blocks
+  codeBlocks.forEach((block, index) => {
+    html = html.replace(`__CODE_BLOCK_${index}__`, block);
+  });
+
+  return html;
 }
 
 // ─── TOPIC AUTO DETECTION ─────────────────────────────────────
@@ -751,4 +978,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   await syncWithBackend();
   refreshLocalMetrics();
   renderAll();
+
+  // Load LeetCode username and auto-sync
+  const savedUsername = localStorage.getItem("dsa_leetcode_username") || "khwlsarthak";
+  const input = document.getElementById("leetcodeUser");
+  if (input) {
+    input.value = savedUsername;
+  }
+  if (savedUsername && backendOnline) {
+    loadLeetCodeStats(savedUsername, true);
+  }
 });
